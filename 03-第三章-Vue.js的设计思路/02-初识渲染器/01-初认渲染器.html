@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Title</title>
+    <link rel="shortcut icon" href="#"/>
+</head>
+<body>
+
+<script>
+  function test01() {
+
+    // 普通虚拟Dom节点
+    const vNode = {
+      tag: 'div',
+      props: {
+        onClick: () => alert('hello')
+      },
+      children: 'click again'
+    }
+
+    // 组件式节点,函数式来描述
+    const MyComponent = function () {
+      return {
+        tag: 'div',
+        props: {
+          onClick: () => alert('hello')
+        },
+        children: 'click me'
+      }
+    }
+
+    const MyComponent2 = {
+      render() {
+        return {
+          tag: 'div',
+          props: {
+            onClick: () => alert('hello')
+          },
+          children: 'click me'
+        }
+      }
+    }
+
+
+    renderer(vNode, document.body)
+
+    function renderer(vNode, container) {
+      if (typeof vNode.tag === 'string') {
+        mountElement(vNode, container)
+      }
+        //else if (typeof vNode.tag === 'function') {
+        //  mountComponent(vNode, container)
+      //}
+      else if (typeof vNode.tag === 'object') {
+        mountComponent(vNode, container)
+      }
+    }
+
+    function mountElement(vNode, container) {
+      const el = document.createElement(vNode.tag)
+      for (const key in vNode.props) {
+        el.addEventListener(key.substr(2).toLowerCase(),
+          vNode.props[key])
+      }
+
+      if (typeof vNode.children === 'string') {
+        el.appendChild(document.createTextNode(vNode.children))
+        //mountElement(vNode, el)
+      } else if (Array.isArray(vNode.children)) {
+        vNode.children.forEach(child => renderer(child, el))
+      }
+      container.appendChild(el)
+    }
+
+    function mountComponent(vNode, container) {
+      /*  // 组件是函数类型
+        const subtree = vNode.tag()
+        // 调用渲染器递归渲染
+        renderer(subtree, container)*/
+
+      const subtree = vNode.tag.render()
+
+      renderer(subtree, container)
+
+    }
+
+  }
+
+  test01()
+</script>
+</body>
+</html>
