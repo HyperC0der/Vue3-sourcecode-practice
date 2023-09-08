@@ -1,0 +1,201 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Title</title>
+    <link rel="shortcut icon" href="#"/>
+</head>
+<body>
+<div>
+    <button disabled>测试按钮</button>
+</div>
+<script>
+  function test01 () {
+    function shouldSetAsProps (el, key, value) {
+      if (key === 'form' && el.tagName === 'INPUT') return false
+      return key in el
+    }
+
+    function createRenderer (options) {
+
+      const {
+        createElement,
+        patchProps,
+        insert,
+        setElementText,
+      } = options
+
+      function patch (n1, n2, container) {
+        // 如果n1存在，则对比n1和n2的类型
+        if (n1 && n1.type !== n2.type) {
+          // 如果新旧vNode的类型不同，则直接将vNode卸载
+          unmount(n1)
+          n1 = null
+        }
+        const { type } = n2
+        if (typeof type === 'string') {
+          if (!n1) {
+            // 如果n1不存在，意味着挂载，则调用mountElement函数完成挂载
+            mountElement(n2, container)
+          } else {
+            // n1存在，意味着打补丁，暂时省略
+            patchElement(n1, n2)
+          }
+        } else if (typeof type === 'object') {
+          // 如果n2.type的值的类型是对象，则它描述的是组件
+        } else if (type === 'xxx') {
+          // 处理其他类型的vNode
+        }
+
+      }
+
+      // 挂载函数
+      function mountElement (vNode, container) {
+        //const el = document.createElement(vNode.type)
+        const el = vNode.el = createElement(vNode.type)
+        if (typeof vNode.children === 'string') {
+          //el.textContent = vNode.children
+          setElementText(el, vNode.children)
+        } else if (Array.isArray(vNode.children)) {
+          vNode.children.forEach((child) => {
+            patch(null, child, el)
+          })
+        }
+
+        if (vNode.props) {
+          for (const key in vNode.props) {
+            patchProps(el, key, null, vNode.props[key])
+          }
+        }
+
+        //container.appendChild(el)
+        insert(el, container)
+      }
+
+      function render (vNode, container) {
+        if (vNode) {
+          // 新vNode 存在，将其与旧vNode一起传递给patch函数，进行打补丁操作
+          patch(container._vNode, vNode, container)
+        } else {
+          // 旧vNode存在。且新vNode不存在，说明是卸载操作
+          // 只需要将container内的Dom清空即可
+          if (container._vNode) {
+            unmount(container._vNode)
+            // 卸载，清空容器
+            //container.innerHTML = ''
+          }
+        }
+        // 把vNode存储到container._vNode下 ,即后续渲染中的就vNode
+        container._vNode = vNode
+      }
+
+      function unmount (vNode) {
+        const parent = vNode.el.parentNode
+        if (parent) {
+          parent.removeChild(vNode.el)
+        }
+      }
+
+      function hydrate (vNode, container) {
+
+      }
+
+      return {
+        render,
+        hydrate,
+      }
+    }
+
+    // 传入浏览器domAPI
+    const renderer = createRenderer(
+      {
+        createElement (tag) {
+          console.log(`创建元素${tag}`)
+          //return document.createElement(tag)
+          return { tag }
+        },
+        setElementText (el, text) {
+          console.log(`设置${JSON.stringify(el)}的文本内容:${text}`)
+          el.textContent = text
+        },
+        patchProps (el, key, prevValue, nextValue) {
+          // 匹配以on开头的属性，视其为事件
+          if (/^on/.test(key)) {
+            const invokers = el._vei || (el._vei = {})
+            // 获取为该元素伪造的事件处理函数invoker
+            let invoker = invokers[key]
+            const name = key.silice(2).toLowerCase()
+            if (nextValue) {
+              if (!invoker) {
+                // 如果没有invoker,则将一个伪造的invoker缓存到el._vei中
+                // vei 是 vue event invoker 的首字母缩写
+                invoker = el._vei[key] = (e) => {
+                  // 当伪造的事件处理函数执行时，会执行真正的事件处理函数
+                  if (Array.isArray(invoker.value)) {
+                    invoker.value.forEach(fn => fn(e))
+                  } else {
+                    invoker.value(e)
+                  }
+                }
+              }
+              // 将真正的事件处理函数赋值给invoker.value
+              invoker.value = nextValue
+              // 绑定invoker 作为事件处理函数
+              el.addEventListener(name, invoker)
+            } else {
+              invoker.value = nextValue
+            }
+            //// 移除上一次绑定的事件处理函数
+            //Boolean(prevValue) && el.removeEventListener(name, prevValue)
+            //// 绑定事件，nextValue为事件函数
+            //el.addEventListener(name, nextValue)
+          } else if (key === 'class') {
+            // 省略
+          } else if (shouldSetAsProps(el, key, nextValue)) {
+            // 省略
+          } else {
+            // 省略
+          }
+
+          if (shouldSetAsProps(el, key, nextValue)) {
+            const type = typeof el[key]
+            if (type === 'boolean' && nextValue === '') {
+              el[key] = true
+            } else {
+              el[key] = nextValue
+            }
+          } else {
+            el.setAttribute(key, nextValue)
+          }
+        },
+        insert (el, parent, anchor = null) {
+          console.log(`将${JSON.stringify(el)}添加到${JSON.stringify(parent)}下`)
+          //parent.insertBefore(el, anchor)
+          parent.children = el
+        },
+      },
+    )
+
+    const vNode = {
+      type: 'div',
+      props: {
+        id: 'foo',
+      },
+      children: [
+        {
+          type: 'p',
+          children: 'hello',
+        },
+      ],
+    }
+
+    const button = {
+      type: 'button',
+      props: {
+        disabled: '',
+      },
+    }
+  }
+</script>
+</body>
+</html>
