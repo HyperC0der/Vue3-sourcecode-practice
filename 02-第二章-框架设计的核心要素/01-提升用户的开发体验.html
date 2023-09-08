@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Title</title>
+    <link rel="shortcut icon" href="#"/>
+</head>
+
+<body>
+
+<div id="app">
+    {{message}}
+</div>
+
+<script src="../js/vue3.js"></script>
+<script>
+  function test01() {
+    const {createApp, ref} = Vue
+
+    createApp({
+      setup() {
+        const message = ref('hello')
+        const count = ref(0)
+        console.log(count)
+        return {
+          message
+        }
+      }
+    }).mount('#app')
+
+  }
+
+  test01()
+</script>
+</body>
+</html>
