@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Title</title>
+    <link rel="shortcut icon" href="#"/>
+</head>
+<body>
+
+<script>
+  function test01 () {
+    const obj = reactive({ foo: 1, bar: 2 })
+
+    const newObj = {
+      ...obj,
+    }
+
+    effect(() => {
+      console.log(newObj.foo)
+    })
+
+    obj.foo = 100
+
+  }
+
+  function test02 () {
+    const obj = reactive({ foo: 1, bar: 2 })
+
+    const newObj = {
+      foo: {
+        get value () {
+          return obj.foo
+        },
+      },
+      bar: {
+        get value () {
+          return obj.bar
+        },
+      },
+    }
+
+    effect(() => {
+      console.log(newObj.foo.value)
+    })
+
+    // 这时候能够触发响应了
+    obj.foo = 100
+
+  }
+</script>
+</body>
+</html>

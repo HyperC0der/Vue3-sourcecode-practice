@@ -1,0 +1,34 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Title</title>
+    <link rel="shortcut icon" href="#"/>
+</head>
+<body>
+
+<script>
+  function test01 () {
+    function proxyRefs (target) {
+      return new Proxy(target, {
+        get (target, key, receiver) {
+          const value = Reflect.get(target, key, receiver)
+          return value.__v_isRef ? value.value : value
+        },
+        set (target, key, newValue, receiver) {
+          const value = target[key]
+          if (value.__v_isRef) {
+            value.value = newValue
+            return true
+          }
+          return Reflect.set(target, key, newValue, receiver)
+        },
+      })
+    }
+
+    const newObj = proxyRefs({ ...toRefs(obj) })
+
+  }
+</script>
+</body>
+</html>

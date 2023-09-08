@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Title</title>
+    <link rel="shortcut icon" href="#"/>
+</head>
+<body>
+
+<script src="../js/vue3.js"></script>
+<script>
+  const { reactive } = Vue
+
+  function test01 () {
+    const wrapper = {
+      value: 'vue',
+    }
+    const name = reactive(wrapper)
+    console.log(name.value)
+    name.value = 'vue3'
+  }
+
+  function test02 () {
+    function ref (val) {
+      const wrapper = {
+        value: val,
+      }
+      Object.defineProperty(wrapper, '__v_isRef', {
+        value: true,
+      })
+
+      return reactive(wrapper)
+    }
+
+    function toRef (obj, key) {
+      const wrapper = {
+        get value () {
+          return obj[key]
+        },
+        set value (val) {
+          obj[key] = val
+        },
+      }
+
+      Object.defineProperty(wrapper, '__v_isRef', {
+        value: true,
+      })
+
+      return wrapper
+    }
+
+    function toRefs (obj) {
+      const ret = {}
+      for (const key in obj) {
+        ret[key] = toRef(obj, key)
+      }
+      return ret
+    }
+
+    const newObj2 = { ...toRefs(obj) }
+
+    const refVal = ref(1)
+
+    effect(() => {
+      console.log('effect run')
+      console.log(refVal.value)
+    })
+    refVal.value = 2
+  }
+</script>
+</body>
+</html>
