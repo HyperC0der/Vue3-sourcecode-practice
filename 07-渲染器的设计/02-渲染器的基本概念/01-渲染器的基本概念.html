@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Title</title>
+    <link rel="shortcut icon" href="#"/>
+</head>
+<body>
+
+<div id="app">
+
+</div>
+
+<script>
+  function test01 () {
+    function createRenderer () {
+      function render (vNode, container) {
+        if (vNode) {
+          // 新vNode 存在，将其与旧vNode一起传递给patch函数，进行打补丁操作
+          patch(container._vNode, vNode, container)
+        } else {
+          // 旧vNode存在。且新vNode不存在，说明是卸载操作
+          // 只需要将container内的Dom清空即可
+          if (container._vNode) {
+            container.innerHTML = ''
+          }
+        }
+        // 把vNode存储到container._vNode下 ,即后续渲染中的就vNode
+        container._vNode = vNode
+      }
+
+      function hydrate (vNode, container) {
+
+      }
+
+      return {
+        render,
+        hydrate,
+      }
+    }
+
+    const renderer = createRenderer()
+    // 首次渲染
+    renderer.render(vNode1, document.querySelector('#app'))
+    // 第二次渲染
+    renderer.render(vNode2, document.querySelector('#app'))
+    // 第三次渲染
+    renderer.render(null, document.querySelector('#app'))
+
+  }
+</script>
+</body>
+</html>

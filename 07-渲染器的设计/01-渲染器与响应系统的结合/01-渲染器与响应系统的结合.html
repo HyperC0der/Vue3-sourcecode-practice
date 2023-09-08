@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Title</title>
+    <link rel="shortcut icon" href="#"/>
+</head>
+<body>
+<div id="app">
+
+</div>
+
+<script src="../../js/vue3.js"></script>
+<script>
+  const { effect, ref } = Vue
+
+  function test01 () {
+    // 渲染器函数
+    function renderer (domString, container) {
+      container.innerHTML = domString
+    }
+
+    renderer('<h1>hello</h1>', document.getElementById('app'))
+
+  }
+
+  //test01()
+  function test02 () {
+    function renderer (domString, container) {
+      container.innerHTML = domString
+    }
+
+    let count = 1
+    renderer(`<h1>${count}</h1>`, document.getElementById('app'))
+  }
+
+  //test02()
+
+  function test03 () {
+    function renderer (domString, container) {
+      container.innerHTML = domString
+    }
+
+    const count = ref(1)
+
+    effect(() => {
+      console.log('effect run')
+      renderer(`<h1>${count.value}</h1>`, document.getElementById('app'))
+    })
+
+    setTimeout(() => {
+      count.value++
+    }, 3000)
+  }
+
+  test03()
+
+</script>
+</body>
+</html>
