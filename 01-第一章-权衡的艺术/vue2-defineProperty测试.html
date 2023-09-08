@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Title</title>
+    <link rel="shortcut icon" href="#"/>
+</head>
+<body>
+
+<script>
+
+  function test01() {
+    function reactive(obj, key, value) {
+      Object.defineProperty(obj, key, {
+        get() {
+          console.log(`输入${key}属性`)
+          return value
+        },
+        set(val) {
+          console.log(`${key}由${value}->设置成->${val}`)
+          if (value !== val) {
+            value = val
+          }
+        }
+      })
+    }
+
+    const data = {name: 'Tony'}
+    Object.keys(data).forEach(key => reactive(data, key, data[key]))
+    console.log(data.name)
+
+    data.name = 'Dignity'
+    console.log(data.name)
+
+  }
+
+  let arr = [1, 2, 3]
+
+  function test02() {
+    function defineReactive(data, key, value) {
+      Object.defineProperty(data, key, {
+        enumerable: true,
+        configurable: true,
+        get: function defineGet() {
+          console.log(`get key:${key} value:${value}`)
+          return value
+        },
+        set: function defineSet(newVal) {
+          console.log(`set key:${key} value: ${newVal}`)
+          value = newVal
+        }
+      })
+    }
+
+    function observe(data) {
+      Object.keys(data).forEach(function (key) {
+        console.log('key===>', key)
+        defineReactive(data, key, data[key])
+      })
+    }
+
+
+    observe(arr)
+
+  }
+
+  //test01()
+  //test02()
+
+  function test03() {
+    const person = {name: 'Tony'}
+
+    const proxyPerson = new Proxy(person, {
+      get(target, key, receiver) {
+        console.log('target===>', target)
+        console.log('key===>', key)
+        console.log('receiver===>', receiver)
+      },
+      set(target, key, value, receiver) {
+        console.log('--------set分割线-----')
+        console.log('target===>', target)
+        console.log('key===>', key)
+        console.log('receiver===>', receiver)
+        console.log('value===>', value)
+      }
+    })
+
+    proxyPerson.name
+    proxyPerson.name = 'Dignity'
+
+  }
+
+  //test03()
+
+  function test04() {
+
+    const data = {name: 'Tony'}
+
+    function reactive(target) {
+      const handler = {
+        get(target, key, receiver) {
+          console.log(`访问了${key}属性`)
+          return Reflect.get(target, key, receiver)
+        },
+        set(target, key, value, receiver) {
+          console.log(`${key}由->${target[key]}->设置成${value}`)
+          Reflect.set(target, key, value, receiver)
+        }
+      }
+
+      return new Proxy(target, handler)
+    }
+
+    const proxyData = reactive(data)
+
+    console.log('proxyData.name====>', proxyData.name)
+
+    proxyData.name = 'Dignity'
+
+    console.log('proxyData.name====>', proxyData.name)
+
+    proxyData.do = '整个新属性'
+    console.log('proxyData.do===>', proxyData.do)
+
+  }
+
+  test04()
+
+
+</script>
+</body>
+</html>
