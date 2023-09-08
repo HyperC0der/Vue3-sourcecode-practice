@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Title</title>
+    <link rel="shortcut icon" href="#"/>
+</head>
+<body>
+
+<script>
+  function test01() {
+
+    let activeEffect
+
+    const effectStack = []
+
+    let bucket = new WeakMap()
+
+    const data = {foo: 1, bar: 2}
+
+    const obj = new Proxy(data, {
+      get(target, key) {
+        track(target, key)
+        return target[key]
+      },
+      set(target, key, newValue, receiver) {
+        target[key] = newValue
+        trigger(target, key)
+      }
+    })
+
+    function track(target, key) {
+      if (!activeEffect) return
+      let depsMap = bucket.get(target)
+      if (!depsMap) {
+        bucket.set(target, (depsMap = new Map()))
+      }
+      let deps = depsMap.get(key)
+      if (!deps) {
+        depsMap.set(key, (deps = new Set()))
+      }
+      deps.add(activeEffect)
+      activeEffect.deps.push(deps)
+    }
+
+    function trigger(target, key) {
+      const depsMap = bucket.get(target)
+      if (!depsMap) return
+      const effects = depsMap.get(key)
+      //effects && effects.forEach(fn => fn())
+
+      //const effectToRun = new Set(effects)
+      const effectToRun = new Set()
+      effects && effects.forEach(effectFn => {
+        if (effectFn !== activeEffect) {
+          effectToRun.add(effectFn)
+        }
+      })
+      effectToRun && effectToRun.forEach(effectFn => {
+        if (effectFn.options.scheduler) {
+          effectFn.options.scheduler(effectFn)
+        } else {
+          effectFn()
+        }
+      })
+    }
+
+    function effect(fn, options = {}) {
+      const effectFn = () => {
+        cleanup(effectFn)
+        activeEffect = effectFn
+        effectStack.push(effectFn)
+        const res = fn()
+        effectStack.pop()
+        activeEffect = effectStack[effectStack.length - 1]
+        return res
+      }
+
+      // 将接受到的options 挂载到副作用函数本身上
+      effectFn.options = options
+      effectFn.deps = []
+      if (!options.lazy) {
+        effectFn()
+      }
+      return effectFn
+    }
+
+    function cleanup(effectFn) {
+      for (let i = 0; i < effectFn.deps.length; i++) {
+        const deps = effectFn.deps[i]
+        deps.delete(effectFn)
+      }
+      effectFn.deps.length = 0
+    }
+
+    const jobQueue = new Set()
+    const p = Promise.resolve()
+    let isFlushing = false
+
+    function flushJob() {
+      if (isFlushing) return
+      isFlushing = true
+      p.then(() => {
+        jobQueue.forEach(job => job())
+      }).finally(() => {
+        isFlushing = false
+      })
+    }
+
+    function computed(getter) {
+      // 用来缓存上一次计算的值
+      let value
+      // dirty标注，用来标识是否需要重新计算值，为true则意味5着脏，需要重新计算
+      let dirty = true
+
+      const effectFn = effect(getter, {
+        lazy: true,
+        scheduler() {
+          if (!dirty) {
+            dirty = true
+            trigger(obj, 'value')
+          }
+        }
+      })
+
+      const obj = {
+        get value() {
+          if (dirty) {
+            value = effectFn()
+            dirty = false
+          }
+          track(obj, 'value')
+          return value
+        }
+      }
+      return obj
+    }
+
+    //const effectFn = effect(() => {
+    //  console.log(obj.foo)
+    //}, {lazy: true})
+    //
+    //console.log('effectFn===>', effectFn)
+    const sumRes = computed(() => {
+      console.log('effect run')
+      return obj.foo + obj.bar
+    })
+    console.log('sumRes===>', sumRes.value)
+    obj.foo++
+    console.log('sumRes===>', sumRes.value)
+    console.log('sumRes===>', sumRes.value)
+
+  }
+
+  test01()
+</script>
+</body>
+</html>

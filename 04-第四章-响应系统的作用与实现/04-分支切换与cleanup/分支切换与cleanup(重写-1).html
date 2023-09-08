@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Title</title>
+    <link rel="shortcut icon" href="#"/>
+</head>
+<body>
+
+<script>
+  function test01() {
+
+    // 缓存当前激活的副作用函数
+    let activeEffect
+    // 依赖收集容器
+    const bucket = new WeakMap()
+    // 原始数据
+    const data = {ok: true, text: 'hello world'}
+
+    const obj = new Proxy(data, {
+      get(target, key) {
+        track(target, key)
+        return target[key]
+      },
+      set(target, key, newVal, receiver) {
+        target[key] = newVal
+        trigger(target, key)
+      }
+    })
+
+    function track(target, key) {
+      if (!activeEffect) return
+      let depsMap = bucket.get(target)
+      if (!depsMap) {
+        bucket.set(target, (depsMap = new Map()))
+      }
+      let deps = depsMap.get(key)
+      if (!deps) {
+        depsMap.set(key, (deps = new Set()))
+      }
+      deps.add(activeEffect)
+      // 将其添加到 activeEffect.deps 数组中
+      activeEffect.deps.push(deps)
+    }
+
+    function trigger(target, key) {
+      let depsMap = bucket.get(target)
+      if (!depsMap) return
+      const effects = depsMap.get(key)
+
+      const effectsToRun = new Set(effects)
+      effectsToRun.forEach(effectFn => effectFn())
+
+      //effects && effects.forEach(fn => fn())
+    }
+
+    function effect(fn) {
+      const effectFn = () => {
+        cleanup(effectFn)
+        activeEffect = effectFn
+        fn()
+      }
+
+      effectFn.deps = []
+      effectFn()
+    }
+
+    function cleanup(effectFn) {
+      // 这时候 effectFn.deps 保存的是 收集好的Set数组
+      for (let i = 0; i < effectFn.deps.length; i++) {
+        // 拿到的deps 是set类型，deps的地址跟bucket的set是相同的
+        const deps = effectFn.deps[i]
+        // 这里delete其实也是多bucket上的set进行删除操作
+        deps.delete(effectFn)
+      }
+      effectFn.deps.length = 0
+    }
+
+    effect(() => {
+      console.log('effect run')
+      //document.body.innerText = obj.text
+      document.body.innerText = obj.ok ? obj.text : 'not'
+    })
+
+    setTimeout(() => {
+      obj.ok = false
+    }, 1000)
+
+    setTimeout(() => {
+      // 这里依旧会执行set,不过bucket中已经没有text对应的副作用函数
+      obj.text = 'hello Vue3'
+    }, 2000)
+
+  }
+
+  test01()
+</script>
+</body>
+</html>

@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Title</title>
+    <link rel="shortcut icon" href="#"/>
+</head>
+<body>
+
+<script>
+  function test01() {
+    let proxy = new Proxy({}, {
+      get: function (target, propKey) {
+        return 35
+      }
+    })
+
+    console.log(proxy.timer);
+    console.log(proxy.name);
+    console.log(proxy.title);
+    console.log(proxy)
+
+  }
+
+  function test02() {
+    let proxy = new Proxy({}, {
+      get(target, p, receiver) {
+        return 35
+      }
+    })
+
+    let obj = Object.create(proxy)
+    console.log(obj.time);
+
+  }
+
+  test02()
+
+  function test03() {
+    let handler = {
+      get(target, name) {
+        if (name === 'prototype') {
+          return Object.prototype
+        }
+        return 'Hello' + name
+      },
+      apply(target, thisBinding, args) {
+        return args[0]
+      },
+      construct(target, args) {
+        return {value: args[1]}
+      }
+    }
+
+  }
+
+</script>
+</body>
+</html>

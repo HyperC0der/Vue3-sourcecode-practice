@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Title</title>
+    <link rel="shortcut icon" href="#"/>
+</head>
+<body>
+
+<script>
+
+  function test01() {
+    const map = new Map()
+
+    const weakmap = new WeakMap()
+
+    (function test01() {
+      const foo = {foo: 1}
+      const bar = {bar: 2}
+
+      map.set(foo, 1)
+      weakmap.set(bar, 2)
+    })()
+
+
+  }
+
+</script>
+</body>
+</html>

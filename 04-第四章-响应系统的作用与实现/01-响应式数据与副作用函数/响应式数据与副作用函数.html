@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Title</title>
+    <link rel="shortcut icon" href="#"/>
+</head>
+<body>
+
+<script>
+
+  function test01() {
+    // 存储副作用函数的桶
+    const bucket = new Set()
+    let getNumber = 0
+    let setNumber = 0
+    // 原始数据
+    const data = {text: 'hello world'}
+    // 创建代理对象，拦截读取操作
+    const obj = new Proxy(data, {
+      get(target, key) {
+        getNumber++
+        console.log('读取了' + getNumber + '次')
+        bucket.add(effect)
+        return target[key]
+      },
+      set(target, key, newVal) {
+        setNumber++
+        console.log('设置了' + setNumber + '次')
+        target[key] = newVal
+        bucket.forEach(fn => fn())
+        return true
+      }
+    })
+
+    function effect() {
+      console.log('effect run')
+      document.body.innerText = obj.text
+    }
+
+    // 执行一次副作用函数
+    effect()
+    // 修改代理对象中的属性值
+    setTimeout(() => {
+      obj.text = 'hello vue3'
+    }, 3000)
+
+  }
+
+  test01()
+
+</script>
+</body>
+</html>

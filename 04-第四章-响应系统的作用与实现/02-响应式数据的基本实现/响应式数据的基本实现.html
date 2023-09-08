@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Title</title>
+    <link rel="shortcut icon" href="#"/>
+</head>
+<body>
+
+<script>
+  function test01() {
+
+    // 存储副作用函数的桶
+    const bucket = new Set()
+    // 原始数据
+    const data = {text: 'hello world'}
+
+    const obj = new Proxy(data, {
+      get(target, key) {
+        bucket.add(effect)
+        return target[key]
+      },
+      set(target, key, newVal) {
+        // 将获取到的新值赋到原始对象
+        target[key] = newVal
+        // 把副作用函数从桶里取出并执行
+        bucket.forEach(fn => fn())
+        return true
+      }
+    })
+
+    function effect() {
+      document.body.innerText = obj.text
+    }
+
+    effect()
+
+    setTimeout(() => {
+      obj.text = 'hello vue3'
+    }, 2000)
+
+
+  }
+  test01()
+
+
+</script>
+</body>
+</html>

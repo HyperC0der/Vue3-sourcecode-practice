@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Title</title>
+    <link rel="shortcut icon" href="#"/>
+</head>
+<body>
+
+<script>
+
+  function test01() {
+    let activeEffect
+    // 存储副作用函数的桶
+    const bucket = new Set()
+    //const bucket = new WeakMap()
+    // 原始数据
+    const data = {text: 'hello world'}
+    // 创建代理对象，拦截读取操作
+    const obj = new Proxy(data, {
+      get(target, key) {
+        if (activeEffect) {
+          bucket.add(activeEffect)
+        }
+        return target[key]
+      },
+      set(target, key, newVal) {
+        target[key] = newVal
+        bucket.forEach(fn => fn())
+        return true
+      }
+    })
+
+    function effect(fn) {
+      //document.body.innerText = obj.text
+      activeEffect = fn
+      fn()
+    }
+
+    // 执行一次副作用函数
+    effect(() => {
+      console.log('effect run')
+      document.body.innerText = obj.text
+    })
+
+    // 修改代理对象中的属性值
+    setTimeout(() => {
+      //obj.text = 'hello vue3'
+      obj.notExist = 'hello vue3'
+    }, 3000)
+
+  }
+
+  test01()
+
+</script>
+</body>
+</html>
