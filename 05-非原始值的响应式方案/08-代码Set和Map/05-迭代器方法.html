@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Title</title>
+    <link rel="shortcut icon" href="#"/>
+</head>
+<body>
+
+<script>
+  function test01 () {
+    const m = new Map([
+      ['key1', 'value1'],
+      ['key2', 'value2'],
+    ])
+
+    for (const [key, value] of m.entries()) {
+      console.log(key, value)
+    }
+
+  }
+
+  //test01()
+
+  function test02 () {
+    const m = new Map([
+      ['key1', 'value1'],
+      ['key2', 'value2'],
+    ])
+
+    const itr = m[Symbol.iterator]()
+    console.log(itr.next())
+    console.log(itr.next())
+    console.log(itr.next())
+  }
+
+  //test02()
+
+  function test03 () {
+    const mutableInstrumentations = {
+      [Symbol.iterator] () {
+        const target = this.raw
+        const itr = target[Symbol.iterator]
+
+        const wrap = (val) => typeof val === 'object' && val !== null ? reactive(val) : val
+
+        return {
+          next () {
+            const { value, done } = itr.next()
+            return {
+              value: value ? [wrap(value[0]), wrap(value)[1]] : value,
+              done,
+            }
+          },
+        }
+      },
+    }
+
+    function iterationMethod () {
+      const target = this.raw
+      const itr = target[Symbol.iterator]()
+      const wrap = (val) => typeof val === 'object' ? reactive(val) : val
+      track(target, ITERATE_KEY)
+      return {
+        next () {
+          const { value, done } = itr.next()
+          return {
+            value: value ? [wrap(value[0], wrap(value[1]))] : value,
+            done,
+          }
+        },
+      }
+    }
+
+    const p = reactive(new Map([
+      ['key1', 'value1'],
+      ['key2', 'value2'],
+    ]))
+
+    effect(() => {
+      for (const [key, value] of p) {
+        console.log(key, value)
+      }
+    })
+
+    p.set('key3', 'value3')
+  }
+
+  function test02 () {
+    const p = reactive(new Map([
+      ['key1', 'value1'],
+      ['key2', 'value2'],
+    ]))
+    effect(() => {
+      for (const [key, value] of p) {
+        console.log(key, value)
+      }
+    })
+    p.set('key3', 'value3')
+
+  }
+
+</script>
+</body>
+</html>

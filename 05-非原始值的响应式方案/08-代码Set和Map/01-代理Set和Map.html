@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Title</title>
+    <link rel="shortcut icon" href="#"/>
+</head>
+<body>
+
+<script>
+  function test01 () {
+    const obj = { foo: 1 }
+    obj.foo
+    obj.foo = 2
+
+    const map = new Map()
+    map.set('key', 1)
+    map.get('key')
+
+  }
+
+  function test02 () {
+    const s = new Set([1, 2, 3])
+    const p = new Proxy(s, {
+      get (target, key, receiver) {
+        if (key === 'size') {
+          return Reflect.get(target, key, target)
+        }
+        //return Reflect.get(target, key, receiver)
+        return target[key].bind(target)
+      },
+    })
+
+    console.log(p.size)
+    p.delete(1)
+  }
+
+  test02()
+</script>
+</body>
+</html>

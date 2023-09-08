@@ -1,0 +1,245 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Title</title>
+    <link rel="shortcut icon" href="#"/>
+</head>
+<body>
+
+<script>
+  function test() {
+    const obj = {
+      name: 'John',
+      get getName() {
+        return this.name;
+      },
+    };
+
+// 调用自身的 getName 方法
+    //console.log(obj.getName()); // John
+
+// 通过 Reflect.get 调用 obj 的 getName 方法
+    const receiver = {
+      name: 'Jack',
+    };
+    console.log(Reflect.get(obj, 'getName', receiver));
+  }
+
+  test();
+
+
+  function test01() {
+    // 用一个全局变量存储当前激活的effect函数
+    let activeEffect;
+
+    // effect 栈
+    const effectStack = [];
+
+    // 存储副作用函数的桶
+    //const bucket = new Set()
+    const bucket = new WeakMap();
+    // 原始数据
+    //const data = {text: 'hello world'}
+    const obj = {
+      foo: 1,
+      get bar() {
+        return this.foo;
+      },
+    };
+
+    // 创建代理对象，拦截读取操作
+    const p = new Proxy(obj, {
+      get(target, key, receiver) {
+
+        track(target, key);
+
+        //return target[key];
+        return Reflect.get(target, key, receiver);
+      },
+      set(target, key, newVal) {
+
+        target[key] = newVal;
+
+        trigger(target, key);
+      },
+    });
+
+    function track(target, key) {
+      if (!activeEffect) return;
+      let depsMap = bucket.get(target);
+      if (!depsMap) {
+        bucket.set(target, (depsMap = new Map()));
+      }
+      let deps = depsMap.get(key);
+      if (!deps) {
+        depsMap.set(key, (deps = new Set()));
+      }
+      deps.add(activeEffect);
+      activeEffect.deps.push(deps);
+    }
+
+    function trigger(target, key) {
+      const depsMap = bucket.get(target);
+      if (!depsMap) return;
+      const effects = depsMap.get(key);
+
+      const effectsToRun = new Set();
+      effects && effects.forEach(effectFn => {
+        if (effectFn !== activeEffect) {
+          effectsToRun.add(effectFn);
+        }
+      });
+
+      effectsToRun.forEach(effectFn => {
+        if (effectFn.options.scheduler) {
+          effectFn.options.scheduler(effectFn);
+        } else {
+          effectFn();
+        }
+      });
+
+    }
+
+    function effect(fn, options = {}) {
+      const effectFn = () => {
+        cleanup(effectFn);
+        activeEffect = effectFn;
+        effectStack.push(effectFn);
+        const res = fn();
+        effectStack.pop();
+        activeEffect = effectStack[effectStack.length - 1];
+        return res;
+      };
+
+      effectFn.options = options;
+      effectFn.deps = [];
+      if (!options.lazy) {
+        effectFn();
+      }
+      return effectFn;
+    }
+
+    function cleanup(effectFn) {
+      for (let i = 0; i < effectFn.deps.length; i++) {
+        const deps = effectFn.deps[i];
+        deps.delete(effectFn);
+      }
+      effectFn.deps.length = 0;
+    }
+
+    // 计算属性
+    function computed(getter) {
+      let value;
+
+      let dirty = true;
+
+      const effectFn = effect(getter, {
+        lazy: true,
+        scheduler() {
+          dirty = true;
+          trigger(obj, 'value');
+        },
+      });
+
+      const obj = {
+        get value() {
+          if (dirty) {
+            value = effectFn();
+            dirty = false;
+          }
+          track(obj, 'value');
+          return value;
+        },
+      };
+
+      return obj;
+
+    }
+
+    // 监听
+    function watch(source, cb, options = {}) {
+      let getter;
+
+      if (typeof source === 'function') {
+        getter = source;
+      } else {
+        getter = () => traverse(source);
+      }
+
+      let oldValue, newValue;
+
+      let cleanup;
+
+      function onInvalidate(fn) {
+        cleanup = fn;
+      }
+
+      const job = () => {
+        newValue = effectFn();
+        if (cleanup) {
+          cleanup();
+        }
+        cb(newValue, oldValue, onInvalidate);
+        oldValue = newValue;
+      };
+
+      const effectFn = effect(() => getter(), {
+        lazy: true,
+        scheduler: () => {
+          if (options.flush === 'post') {
+            const p = Promise.resolve();
+            p.then(job);
+          } else {
+            job();
+          }
+        },
+      });
+      if (options.immediate) {
+        job();
+      } else {
+        oldValue = effectFn();
+      }
+    }
+
+    function traverse(value, seen = new Set()) {
+      if (typeof value !== 'object' || value === null || seen.has(value)) return;
+
+      seen.add(value);
+
+      for (const valueKey in value) {
+        traverse(value[valueKey], seen);
+      }
+      console.log('返回的value是===>', value);
+      return value;
+
+    }
+
+    const jobQueue = new Set();
+    const promise = Promise.resolve();
+
+    let isFlushing = false;
+
+    function flushJob() {
+      if (isFlushing) return;
+      isFlushing = true;
+      promise.then(() => {
+        jobQueue.forEach(job => job());
+      }).finally(() => {
+        isFlushing = false;
+      });
+    }
+
+    effect(() => {
+      console.log('effect run');
+      console.log(p.bar);
+    });
+
+    p.foo++;
+
+  }
+
+  //test01();
+</script>
+</body>
+</html>

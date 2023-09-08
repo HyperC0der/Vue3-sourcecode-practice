@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Title</title>
+    <link rel="shortcut icon" href="#"/>
+</head>
+<body>
+
+<script>
+  function test01 () {
+    const mutableInstrumenttations = {
+      [Symbol.iterator]: iterationMethod,
+      entries: iterationMethod,
+      values: valuesIterationMethod,
+    }
+
+    function valuesIterationMethod () {
+      const target = this.raw
+      const itr = target.values()
+
+      const wrap = (val) => typeof val === 'object' ? reactive(val) : val
+
+      track(target, ITERATE_KEY)
+
+      return {
+        next () {
+          const { value, done } = itr.next()
+          return {
+            value: wrap(value),
+            donw,
+          }
+        },
+        [Symbol.iterator] () {
+          return this
+        },
+      }
+
+    }
+  }
+</script>
+</body>
+</html>

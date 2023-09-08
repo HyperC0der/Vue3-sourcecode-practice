@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Title</title>
+    <link rel="shortcut icon" href="#"/>
+</head>
+<body>
+
+<script src="../../js/vue3.js"></script>
+<script>
+  const { effect, reactive } = Vue
+
+  function test01 () {
+    const mutableInstrumentations = {
+      forEach (callback, thisArg) {
+        // wrap函数用来把可代理的值转换为响应式数据
+        const wrap = (val) => typeof val === 'object' ? reactive(val) : val
+        // 获取原始数据对象
+        const target = this.raw
+        // 与ITERATE_KEY建立响应联系
+        track(target, ITERATE_KEY)
+        target.forEach((v, k) => {
+          //callback(wrap(v), wrap(k), this)
+          callback.call(thisArg, wrap(v), wrap(k), this)
+        })
+      },
+    }
+
+    const m = new Map([{ key: 1 }, { value: 1 }])
+
+    effect(() => {
+      m.forEach(function (value, key, map) {
+        console.log('value===>', value)
+        console.log('key===>', key)
+      })
+    })
+  }
+
+  function test02 () {
+    const p = reactive(new Map([
+      [{ key: 1 }, { value: 1 }],
+    ]))
+
+    effect(() => {
+      p.forEach(function (value, key) {
+        console.log(value)
+        console.log(key)
+      })
+    })
+  }
+
+  function test03 () {
+    const key = { key: 1 }
+    const value = new Set([1, 2, 3])
+    const p = reactive(new Map([
+      [key, value],
+    ]))
+
+    effect(() => {
+      p.forEach(function (value, key) {
+        console.log(value.size)
+      })
+    })
+  }
+
+</script>
+</body>
+</html>

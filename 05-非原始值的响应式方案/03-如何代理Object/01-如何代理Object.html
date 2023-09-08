@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Title</title>
+    <link rel="shortcut icon" href="#"/>
+</head>
+<body>
+
+<script>
+  function test01() {
+    // 拦截 in 操作符
+    const obj = {foo: 1};
+    const p = new Proxy(obj, {
+      has(target, key) {
+        track(target, key);
+        return Reflect.has(target, key);
+      },
+    });
+  }
+
+  function test02() {
+    const obj = {foo: 1};
+    const ITERATE_KEY = Symbol();
+
+    const p = new Proxy(obj, {
+      ownKeys(target) {
+        track(target, ITERATE_KEY);
+        return Reflect.ownKeys(target);
+      },
+    });
+  }
+</script>
+</body>
+</html>

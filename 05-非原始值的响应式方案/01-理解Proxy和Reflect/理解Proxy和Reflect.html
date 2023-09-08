@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Title</title>
+    <link rel="shortcut icon" href="#"/>
+</head>
+<body>
+
+<script>
+
+  // proxy代理函数
+  function test01() {
+    const fn = (name) => {
+      console.log('我是:', name);
+    };
+    //fn()
+
+    const p2 = new Proxy(fn, {
+      apply(target, thisArg, argArray) {
+        target.call(thisArg, ...argArray);
+      },
+    });
+
+    p2('hcy');
+
+  }
+
+  function test02() {
+    const obj = {foo: 1};
+    // 直接读取
+    console.log(obj.foo);
+    // 使用Reflect.get 读取
+    console.log(Reflect.get(obj, 'foo'));
+    console.log(Reflect.get(obj, 'foo', {foo: 2}));
+    //Reflect.set()
+    //Reflect.apply()
+  }
+
+  //test01()
+
+  //test02();
+
+  function test03() {
+    const obj = {foo: 1};
+
+    const p = new Proxy(obj,{
+      get(target,key){
+
+      }
+    })
+  }
+
+</script>
+</body>
+</html>

@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Title</title>
+    <link rel="shortcut icon" href="#"/>
+</head>
+<script src="../../js/vue3.js"></script>
+<body>
+
+<script>
+  import {reactive} from '../../js/vue3';
+
+  function test01() {
+    function reactive(obj) {
+      return new Proxy(obj, {
+        get(target, key, receiver) {
+          if (key === 'raw') {
+            return target;
+          }
+          track(target, key);
+          const res = Reflect.get(target, key, receiver);
+          if (typeof res === 'object' && res !== null) {
+            return reactive(res);
+          }
+          return res;
+        },
+      });
+    }
+  }
+
+  function test02() {
+    function createReactive(obj, isShallow = false) {
+      return new Proxy(obj, {
+        get(target, key, receiver) {
+          if (key === 'raw') {
+            return target;
+          }
+          const res = Reflect.get(target, key, receiver);
+          track(target, key);
+          if (isShallow) {
+            return res;
+          }
+          if (typeof res === 'object' && res !== null) {
+            return reactive(res);
+          }
+          return res
+        },
+      });
+    }
+  }
+</script>
+</body>
+</html>

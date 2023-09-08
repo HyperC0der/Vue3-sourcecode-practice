@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Title</title>
+    <link rel="shortcut icon" href="#"/>
+</head>
+<body>
+<script src="../../js/vue3.js"></script>
+<script type="module">
+  const { readonly } = Vue
+
+  function test01 () {
+    //const obj = readonly({foo: 1});
+    //obj.foo = 2;
+
+    function createReactive (obj, isShallow = false, isReadonly = false) {
+      return new Proxy(obj, {
+        get (target, key, receiver) {
+          if (key === 'raw') {
+            return target
+          }
+          if (!isReadonly) {
+            track(target, key)
+          }
+          const res = Reflect.get(target, key, receiver)
+          if (isShallow) {
+            return res
+          }
+          if (typeof res === 'object' && res !== null) {
+            return isReadonly ? readonly(res) : reactive(res)
+          }
+          return res
+        },
+        set (target, key, value, receiver) {
+          if (isReadonly) {
+            console.warn(`属性${key}是只读的`)
+            return true
+          }
+          const oldVal = target[key]
+          const type = Object.prototype.hasOwnProperty.call(target, key) ? 'SET' : 'ADD'
+          const res = Reflect.set(target, key, newVal, receiver)
+          if (target === receiver.raw) {
+            if (Object.is(oldVal, newVal)) {
+              trigger(target, key, type)
+            }
+          }
+          return res
+        },
+        deleteProperty (target, key) {
+          if (isReadonly) {
+            console.warn(`属性${key}是只读的`)
+            return true
+          }
+          const hadKey = Object.prototype.hasOwnProperty.call(target, key)
+          const res = Reflect.deleteProperty(target, key)
+          if (res && hadKey) {
+            trigger(target, key, 'DELETE')
+          }
+          return res
+        },
+      })
+    }
+
+  }
+
+  test01()
+</script>
+</body>
+</html>
